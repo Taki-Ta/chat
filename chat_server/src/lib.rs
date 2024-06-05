@@ -1,9 +1,12 @@
 mod config;
 mod handlers;
 
+use axum::{
+    routing::{get, patch, post},
+    Router,
+};
 pub use config::AppConfig;
 use handlers::*;
-use axum::{routing::{get, patch, post}, Router};
 use std::{ops::Deref, sync::Arc};
 
 #[derive(Debug, Clone)]
@@ -39,10 +42,14 @@ pub fn get_router(config: AppConfig) -> Router {
         .route("/signin", post(login_handler))
         .route("/signup", post(register_handler))
         .route("/chat", get(list_chat_handler).post(create_chat_handler))
-        .route("/chat/:id",patch(update_chat_handler).delete(delete_chat_handler))
-        .route("/chat/:id/messages",get(list_messages_handler).post(send_message_handler))
-        
-        ;
+        .route(
+            "/chat/:id",
+            patch(update_chat_handler).delete(delete_chat_handler),
+        )
+        .route(
+            "/chat/:id/messages",
+            get(list_messages_handler).post(send_message_handler),
+        );
     Router::new()
         .route("/", get(index_handler))
         .nest("/api", api)
