@@ -12,9 +12,13 @@ axum = {workspace=true}
 chrono = { version = "0.4.38", features = ["serde"] }
 serde = {workspace=true}
 serde_yaml = {workspace=true}
+jwt-simple = "0.12"
 sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "tls-rustls","chrono"] }
-sqlx-db-tester = "0.4.2"
 thiserror = {workspace=true}
 tokio = {workspace=true}
 tracing = {workspace=true}
 tracing-subscriber = {workspace=true}
+
+
+[dev-dependencies]
+sqlx-db-tester = "0.4.2"

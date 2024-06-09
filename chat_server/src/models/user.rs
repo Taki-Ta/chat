@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn create_and_verify_user_should_woek() -> anyhow::Result<()> {
+    async fn create_and_verify_user_should_work() -> anyhow::Result<()> {
         let tdb = TestPg::new(
             "postgres://postgres:postgres@localhost:5432".to_string(),
             Path::new("../migrations"),
