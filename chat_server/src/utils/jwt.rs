@@ -17,7 +17,7 @@ impl EncodingKey {
         Ok(Self(Ed25519KeyPair::from_pem(pem)?))
     }
     #[allow(unused)]
-    pub fn generate_token(&self, user: User) -> Result<String, AppError> {
+    pub fn encode(&self, user: User) -> Result<String, AppError> {
         let claims = Claims::with_custom_claims(user, Duration::from_secs(JWT_DURATION));
         let claims = claims.with_audience(JWT_AUD).with_issuer(JWT_ISS);
         let token = self.sign(claims)?;
@@ -74,7 +74,7 @@ mod tests {
             email: "taki@gmail.com".to_string(),
             created_at: Utc::now(),
         };
-        let token = encoding_key.generate_token(user.clone())?;
+        let token = encoding_key.encode(user.clone())?;
         let decoded_user = decoding_key.verify(&token)?;
         assert_eq!(user, decoded_user);
 
@@ -83,7 +83,7 @@ mod tests {
         let pem_pk_str = include_str!("../../fixtures/decoding.pem");
         let encoding_key = EncodingKey(Ed25519KeyPair::from_pem(pem_sk_str)?);
         let decoding_key = DecodingKey(Ed25519PublicKey::from_pem(pem_pk_str)?);
-        let token = encoding_key.generate_token(user.clone())?;
+        let token = encoding_key.encode(user.clone())?;
         let decoded_user = decoding_key.verify(&token)?;
         assert_eq!(user, decoded_user);
 

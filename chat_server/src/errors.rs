@@ -27,6 +27,8 @@ pub enum AppError {
     PasswordHashError(#[from] argon2::password_hash::Error),
     #[error("jwt sign error: {0}")]
     JwtSignError(#[from] jwt_simple::Error),
+    #[error("User with email {0} already exists")]
+    AlreadyExists(String),
 }
 
 impl IntoResponse for AppError {
@@ -35,6 +37,7 @@ impl IntoResponse for AppError {
             AppError::SqlxError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::PasswordHashError(_) => StatusCode::UNPROCESSABLE_ENTITY,
             AppError::JwtSignError(_) => StatusCode::FORBIDDEN,
+            AppError::AlreadyExists(_) => StatusCode::CONFLICT,
         };
         let body = (status_code, Json(OutputError::new(self.to_string())));
         body.into_response()

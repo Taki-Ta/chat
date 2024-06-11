@@ -4,6 +4,8 @@ use argon2::{
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
 };
 
+use super::{CreateUser, SignInUser};
+
 impl User {
     pub async fn find_by_email(email: &str, pool: &sqlx::PgPool) -> Result<Option<Self>, AppError> {
         let rec = sqlx::query_as("SELECT id, name, email, created_at FROM users WHERE email = $1")
@@ -14,13 +16,13 @@ impl User {
     }
 
     /// Create a new user
-    pub async fn create(
-        email: &str,
-        name: &str,
-        password: &str,
-        pool: &sqlx::PgPool,
-    ) -> Result<Self, AppError> {
-        let password_hash = hash_password(password)?;
+    pub async fn create(create_user: &CreateUser, pool: &sqlx::PgPool) -> Result<Self, AppError> {
+        let user = User::find_by_email(&create_user.email, pool).await?;
+        // Check if the user already exists
+        if let Some(user) = user {
+            return Err(AppError::AlreadyExists(user.email));
+        }
+        let password_hash = hash_password(&create_user.password)?;
         let rec = sqlx::query_as(
             r#"
             INSERT INTO users(email,name,password_hash)
@@ -28,8 +30,8 @@ impl User {
             RETURNING id,email,name,password_hash,created_at
             "#,
         )
-        .bind(email)
-        .bind(name)
+        .bind(&create_user.email)
+        .bind(&create_user.name)
         .bind(password_hash)
         .fetch_one(pool)
         .await?;
@@ -37,21 +39,20 @@ impl User {
     }
     /// Verify user's email and password
     pub async fn verify(
-        email: &str,
-        password: &str,
+        sign_in_user: &SignInUser,
         pool: &sqlx::PgPool,
     ) -> Result<Option<Self>, AppError> {
         let user: Option<User> = sqlx::query_as(
             "SELECT id, name, email, password_hash, created_at FROM users WHERE email = $1",
         )
-        .bind(email)
+        .bind(&sign_in_user.email)
         .fetch_optional(pool)
         .await?;
         match user {
             Some(mut user) => {
                 // Verify the password
                 let password_hash = user.password_hash.take().unwrap();
-                let is_valid = verify_password(password, &password_hash)?;
+                let is_valid = verify_password(&sign_in_user.password, &password_hash)?;
                 if is_valid {
                     Ok(Some(user))
                 } else {
@@ -102,8 +103,9 @@ mod tests {
             Path::new("../migrations"),
         );
         let pool = tdb.get_pool().await;
-        let (email, name, password) = ("taki@gmail.com", "Taki", "takitaki");
-        let user = User::create(email, name, password, &pool).await?;
+        let (name, email, password) = ("Taki", "taki@gmail.com", "takitaki");
+        let create_user = CreateUser::new(name, email, password);
+        let user = User::create(&create_user, &pool).await?;
         assert_eq!(user.email, email);
         assert_eq!(user.name, name);
         assert!(user.id > 0);
@@ -112,7 +114,11 @@ mod tests {
         assert_eq!(user.email, email);
         assert_eq!(user.name, name);
 
-        let user = User::verify(email, password, &pool).await?;
+        let sign_in_user = SignInUser {
+            email: email.to_string(),
+            password: password.to_string(),
+        };
+        let user = User::verify(&sign_in_user, &pool).await?;
         assert!(user.is_some());
         Ok(())
     }

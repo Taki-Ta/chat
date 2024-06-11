@@ -59,8 +59,8 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
     let state = AppState::try_new(config).await?;
 
     let api = Router::new()
-        .route("/signin", post(login_handler))
-        .route("/signup", post(register_handler))
+        .route("/signin", post(signin_handler))
+        .route("/signup", post(signup_handler))
         .route("/chat", get(list_chat_handler).post(create_chat_handler))
         .route(
             "/chat/:id",
@@ -81,5 +81,31 @@ impl fmt::Debug for AppStateInner {
         f.debug_struct("AppStateInner")
             .field("config", &self.config)
             .finish()
+    }
+}
+
+#[cfg(test)]
+impl AppState {
+    pub async fn new_for_test(
+        config: AppConfig,
+    ) -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+        use sqlx_db_tester::TestPg;
+        let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
+        let ek = EncodingKey::load(&config.auth.sk).context("load sk failed")?;
+        let server_url = config.server.db_url.split('/').next().unwrap();
+        let tdb = TestPg::new(
+            server_url.to_string(),
+            std::path::Path::new("../migrations"),
+        );
+        let pool = tdb.get_pool().await;
+        let state = Self {
+            inner: Arc::new(AppStateInner {
+                config,
+                ek,
+                dk,
+                pool,
+            }),
+        };
+        Ok((tdb, state))
     }
 }
