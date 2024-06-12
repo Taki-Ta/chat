@@ -1,22 +1,24 @@
 mod config;
 mod errors;
 mod handlers;
+mod middlewares;
 mod models;
 mod utils;
 
 use anyhow::Context;
 use axum::{
+    middleware::from_fn_with_state,
     routing::{get, patch, post},
     Router,
 };
 pub use config::AppConfig;
 pub use errors::*;
 use handlers::*;
+use middlewares::{set_layer, verify_token};
 pub use models::User;
 use sqlx::PgPool;
 use std::{fmt, ops::Deref, sync::Arc};
 pub use utils::{DecodingKey, EncodingKey};
-
 #[derive(Debug, Clone)]
 pub(crate) struct AppState {
     pub(crate) inner: Arc<AppStateInner>,
@@ -59,21 +61,25 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
     let state = AppState::try_new(config).await?;
 
     let api = Router::new()
-        .route("/signin", post(signin_handler))
-        .route("/signup", post(signup_handler))
         .route("/chat", get(list_chat_handler).post(create_chat_handler))
         .route(
             "/chat/:id",
-            patch(update_chat_handler).delete(delete_chat_handler),
+            patch(update_chat_handler)
+                .delete(delete_chat_handler)
+                .post(send_message_handler),
         )
-        .route(
-            "/chat/:id/messages",
-            get(list_messages_handler).post(send_message_handler),
-        );
-    Ok(Router::new()
+        .route("/chat/:id/messages", get(list_messages_handler))
+        .layer(from_fn_with_state(state.clone(), verify_token))
+        //routes unneed to verify token
+        .route("/signin", post(signin_handler))
+        .route("/signup", post(signup_handler));
+
+    let app = Router::new()
         .route("/", get(index_handler))
         .nest("/api", api)
-        .with_state(state))
+        .with_state(state);
+
+    Ok(set_layer(app))
 }
 
 impl fmt::Debug for AppStateInner {
