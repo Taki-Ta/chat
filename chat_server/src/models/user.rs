@@ -7,6 +7,16 @@ use argon2::{
 use super::{CreateUser, SignInUser};
 
 impl User {
+    pub fn new(id: i64, name: impl Into<String>, email: impl Into<String>) -> Self {
+        Self {
+            id,
+            name: name.into(),
+            email: email.into(),
+            password_hash: None,
+            created_at: chrono::Utc::now(),
+        }
+    }
+
     pub async fn find_by_email(email: &str, pool: &sqlx::PgPool) -> Result<Option<Self>, AppError> {
         let rec = sqlx::query_as("SELECT id, name, email, created_at FROM users WHERE email = $1")
             .bind(email)
