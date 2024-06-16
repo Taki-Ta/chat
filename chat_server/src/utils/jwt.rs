@@ -73,6 +73,7 @@ mod tests {
             password_hash: None,
             email: "taki@gmail.com".to_string(),
             created_at: Utc::now(),
+            ws_id: 0,
         };
         let token = encoding_key.encode(user.clone())?;
         let decoded_user = decoding_key.verify(&token)?;

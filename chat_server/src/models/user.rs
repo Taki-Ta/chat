@@ -3,8 +3,9 @@ use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
 };
+use tracing::warn;
 
-use super::{CreateUser, SignInUser};
+use super::{CreateUser, SignInUser, Workspace};
 
 impl User {
     pub fn new(id: i64, name: impl Into<String>, email: impl Into<String>) -> Self {
@@ -14,14 +15,16 @@ impl User {
             email: email.into(),
             password_hash: None,
             created_at: chrono::Utc::now(),
+            ws_id: 0,
         }
     }
 
     pub async fn find_by_email(email: &str, pool: &sqlx::PgPool) -> Result<Option<Self>, AppError> {
-        let rec = sqlx::query_as("SELECT id, name, email, created_at FROM users WHERE email = $1")
-            .bind(email)
-            .fetch_optional(pool)
-            .await?;
+        let rec =
+            sqlx::query_as("SELECT id, name, email, created_at,ws_id FROM users WHERE email = $1")
+                .bind(email)
+                .fetch_optional(pool)
+                .await?;
         Ok(rec)
     }
 
@@ -32,17 +35,29 @@ impl User {
         if let Some(user) = user {
             return Err(AppError::AlreadyExists(user.email));
         }
+        //find the workspace id
+        let ws_id = match Workspace::find_by_name(&create_user.workspace, pool).await? {
+            Some(ws) => ws.id,
+            None => {
+                warn!(
+                    "Workspace not found:{}, set default workspace instead",
+                    create_user.workspace
+                );
+                0
+            }
+        };
         let password_hash = hash_password(&create_user.password)?;
         let rec = sqlx::query_as(
             r#"
-            INSERT INTO users(email,name,password_hash)
-            VALUES($1,$2,$3)
-            RETURNING id,email,name,password_hash,created_at
+            INSERT INTO users(email,name,password_hash,ws_id)
+            VALUES($1,$2,$3,$4)
+            RETURNING id,email,name,password_hash,created_at,ws_id
             "#,
         )
         .bind(&create_user.email)
         .bind(&create_user.name)
         .bind(password_hash)
+        .bind(ws_id)
         .fetch_one(pool)
         .await?;
         Ok(rec)
@@ -53,7 +68,7 @@ impl User {
         pool: &sqlx::PgPool,
     ) -> Result<Option<Self>, AppError> {
         let user: Option<User> = sqlx::query_as(
-            "SELECT id, name, email, password_hash, created_at FROM users WHERE email = $1",
+            "SELECT id, name, email, password_hash, created_at,ws_id FROM users WHERE email = $1",
         )
         .bind(&sign_in_user.email)
         .fetch_optional(pool)
@@ -114,7 +129,7 @@ mod tests {
         );
         let pool = tdb.get_pool().await;
         let (name, email, password) = ("Taki", "taki@gmail.com", "takitaki");
-        let create_user = CreateUser::new(name, email, password);
+        let create_user = CreateUser::new("none", name, email, password);
         let user = User::create(&create_user, &pool).await?;
         assert_eq!(user.email, email);
         assert_eq!(user.name, name);

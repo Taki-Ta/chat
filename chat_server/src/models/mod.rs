@@ -1,4 +1,5 @@
 mod user;
+mod workspace;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -14,6 +15,15 @@ pub struct User {
     pub password_hash: Option<String>,
     pub email: String,
     pub created_at: DateTime<Utc>,
+    pub ws_id: i64,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
+pub struct Workspace {
+    pub id: i64,
+    pub name: String,
+    pub owner_id: i64,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -21,6 +31,7 @@ pub struct CreateUser {
     pub name: String,
     pub email: String,
     pub password: String,
+    pub workspace: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,6 +42,7 @@ pub struct SignInUser {
 
 impl CreateUser {
     pub fn new(
+        workspace: impl Into<String>,
         name: impl Into<String>,
         email: impl Into<String>,
         password: impl Into<String>,
@@ -39,6 +51,7 @@ impl CreateUser {
             email: email.into(),
             name: name.into(),
             password: password.into(),
+            workspace: workspace.into(),
         }
     }
 }

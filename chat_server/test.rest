@@ -4,12 +4,14 @@ POST http://localhost:6688/api/signup
 Content-Type: application/json
 
 {
-    "name": "Taki",
+    "name": "Taki2222",
     "email": "Taki@gmail.com",
-    "password": "takitaki"
+    "password": "takitaki",
+    "workspace": "1"
 }
 
 ### signin user (valid)
+# @name signin
 
 POST http://localhost:6688/api/signin
 Content-Type: application/json
@@ -19,9 +21,11 @@ Content-Type: application/json
     "password": "takitaki"
 }
 
+@token = {{signin.response.body.token}}
+
+
 ### signin user (invalid)
 
-# @name signin
 POST http://localhost:6688/api/signin
 Content-Type: application/json
 
@@ -30,7 +34,6 @@ Content-Type: application/json
     "password": "123456"
 }
 
-@token = {{signin.response.body.token}}
 
 
 ### get chat list

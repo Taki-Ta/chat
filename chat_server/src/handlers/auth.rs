@@ -49,7 +49,7 @@ mod tests {
     async fn signup_should_work() -> Result<()> {
         let config = AppConfig::load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
-        let input = CreateUser::new("Taki", "Taki@gmail.com", "Taki");
+        let input = CreateUser::new("none", "Taki", "Taki@gmail.com", "Taki");
         let ret = signup_handler(State(state), Json(input))
             .await?
             .into_response();
@@ -64,11 +64,12 @@ mod tests {
     async fn signup_duplicate_user_should_409() -> Result<()> {
         let config = AppConfig::load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
-        let input = CreateUser::new("Taki", "Taki@gmail.com", "Taki");
+        let input = CreateUser::new("none", "Taki", "Taki@gmail.com", "Taki");
         signup_handler(State(state.clone()), Json(input.clone())).await?;
         let ret = signup_handler(State(state.clone()), Json(input.clone()))
             .await
             .into_response();
+        println!("{:?}", ret);
         assert_eq!(ret.status(), StatusCode::CONFLICT);
         let body = ret.into_body().collect().await?.to_bytes();
         let ret: OutputError = serde_json::from_slice(&body)?;
@@ -84,7 +85,7 @@ mod tests {
         let name = "Mitsuha";
         let email = "Mitsuha@gmail.com";
         let password = "Mitsuha";
-        let user = CreateUser::new(name, email, password);
+        let user = CreateUser::new("none", name, email, password);
         User::create(&user, &state.pool).await?;
         let input = SignInUser::new(email, password);
         let ret = signin_handler(State(state), Json(input))

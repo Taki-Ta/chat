@@ -24,7 +24,7 @@ pub(crate) struct AppState {
     pub(crate) inner: Arc<AppStateInner>,
 }
 
-#[allow(dead_code)]
+#[allow(unused)]
 pub(crate) struct AppStateInner {
     pub(crate) config: AppConfig,
     pub(crate) dk: DecodingKey,
