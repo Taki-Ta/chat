@@ -75,20 +75,14 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{models::CreateUser, User};
+    use crate::{models::CreateUser, tests::get_test_pool, User};
     use anyhow::{Ok, Result};
-    use sqlx_db_tester::TestPg;
-    use std::path::Path;
 
     #[tokio::test]
-    async fn workspace_should_create_and_set_owner() -> Result<()> {
-        let tdb = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = tdb.get_pool().await;
+    async fn workspace_create_and_set_owner_should_work() -> Result<()> {
+        let (_tdb, pool) = get_test_pool(None).await;
         let ws = Workspace::create("test", 0, &pool).await.unwrap();
-        let input = CreateUser::new(&ws.name, "Taki", "taki@gmail.com", "takitaki");
+        let input = CreateUser::new(&ws.name, "Taki", "Taki@gmail.com", "takitaki");
         let user = User::create(&input, &pool).await.unwrap();
         assert_eq!(ws.name, "test");
         assert_eq!(user.ws_id, ws.id);
@@ -98,39 +92,40 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn workspace_should_find_by_name() -> Result<()> {
-        let tdb = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = tdb.get_pool().await;
-        let _ws = Workspace::create("test_workspace", 0, &pool).await?;
-        let ws = Workspace::find_by_name("test_workspace", &pool).await?;
+    async fn workspace_find_by_name_should_work() -> Result<()> {
+        let (_tdb, pool) = get_test_pool(None).await;
+        let ws = Workspace::find_by_name("ws1", &pool).await?;
         //workspace exists
-        assert_eq!(ws.unwrap().name, "test_workspace");
+        assert_eq!(ws.unwrap().name, "ws1");
         //workspace does not exist
-        let ws = Workspace::find_by_name("test_workspace2", &pool).await?;
+        let ws = Workspace::find_by_name("ws-1", &pool).await?;
         assert_eq!(ws, None);
         Ok(())
     }
 
     #[tokio::test]
-    async fn workspace_should_fetch_all_chat_users() -> Result<()> {
-        let tdb = TestPg::new(
-            "postgres://postgres:postgres@localhost:5432".to_string(),
-            Path::new("../migrations"),
-        );
-        let pool = tdb.get_pool().await;
-        let ws = Workspace::create("test", 0, &pool).await?;
-        let input = CreateUser::new(&ws.name, "Tyr Chen", "tchen@acme.org", "Hunter42");
-        let user1 = User::create(&input, &pool).await?;
-        let input = CreateUser::new(&ws.name, "Alice Wang", "alice@acme.org", "Hunter42");
-        let user2 = User::create(&input, &pool).await?;
+    async fn workspace_find_by_ids_should_work() -> Result<()> {
+        let (_tdb, pool) = get_test_pool(None).await;
+        let ws = Workspace::find_by_id(1, &pool).await?;
+        //workspace exists
+        assert_eq!(ws.unwrap().id, 1);
+        //workspace does not exist
+        let ws = Workspace::find_by_id(-1, &pool).await?;
+        assert_eq!(ws, None);
+        Ok(())
+    }
 
-        let users = Workspace::fetch_all_chat_users(ws.id as _, &pool).await?;
+    #[tokio::test]
+    async fn workspace_fetch_all_chat_users_should_work() -> Result<()> {
+        let (_tdb, pool) = get_test_pool(None).await;
+
+        let users = Workspace::fetch_all_chat_users(1, &pool).await?;
         assert_eq!(users.len(), 2);
-        assert_eq!(users[0].id, user1.id);
-        assert_eq!(users[1].id, user2.id);
+        assert_eq!(users[0].name, "taki");
+        assert_eq!(users[1].name, "okudera");
+
+        assert_eq!(users[0].ws_id, 1);
+        assert_eq!(users[1].ws_id, 1);
 
         Ok(())
     }
