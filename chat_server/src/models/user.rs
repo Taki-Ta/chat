@@ -1,11 +1,40 @@
-use crate::{AppError, User};
+use super::Workspace;
+use crate::AppError;
 use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
 };
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use tracing::warn;
 
-use super::{CreateUser, SignInUser, Workspace};
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
+pub struct User {
+    pub id: i64,
+    // pub ws_id: String,
+    pub name: String,
+    #[sqlx(default)]
+    #[serde(skip)]
+    pub password_hash: Option<String>,
+    pub email: String,
+    pub created_at: DateTime<Utc>,
+    pub ws_id: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateUser {
+    pub name: String,
+    pub email: String,
+    pub password: String,
+    pub workspace: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SignInUser {
+    pub email: String,
+    pub password: String,
+}
 
 impl User {
     pub fn new(id: i64, name: impl Into<String>, email: impl Into<String>) -> Self {
@@ -85,6 +114,31 @@ impl User {
                 }
             }
             None => Ok(None),
+        }
+    }
+}
+
+impl CreateUser {
+    pub fn new(
+        workspace: impl Into<String>,
+        name: impl Into<String>,
+        email: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Self {
+        Self {
+            email: email.into(),
+            name: name.into(),
+            password: password.into(),
+            workspace: workspace.into(),
+        }
+    }
+}
+
+impl SignInUser {
+    pub fn new(email: impl Into<String>, password: impl Into<String>) -> Self {
+        Self {
+            email: email.into(),
+            password: password.into(),
         }
     }
 }

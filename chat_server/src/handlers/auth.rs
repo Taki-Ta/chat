@@ -75,7 +75,7 @@ mod tests {
 
         assert_eq!(
             ret.error,
-            format!("User with email {} already exists", input.email)
+            format!("user with email {} already exists", input.email)
         );
         Ok(())
     }

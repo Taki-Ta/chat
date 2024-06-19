@@ -4,8 +4,8 @@ POST http://localhost:6688/api/signup
 Content-Type: application/json
 
 {
-    "name": "Taki2222",
-    "email": "Taki@gmail.com",
+    "name": "Takiki",
+    "email": "Takiki@gmail.com",
     "password": "takitaki",
     "workspace": "1"
 }
@@ -38,6 +38,31 @@ Content-Type: application/json
 
 ### get chat list
 
-
-GET http://localhost:6688/api/chat
+GET http://localhost:6688/api/chats
 Authorization: Bearer {{token}}
+
+
+### create_chat
+
+Post http://localhost:6688/api/chats
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "public": false,
+    "members": [1,2]
+}
+
+### delete chat
+DELETE http://localhost:6688/api/chat/4
+Authorization: Bearer {{token}}
+
+
+### update chat
+PATCH http://localhost:6688/api/chat/5
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "members": [1,2]
+}

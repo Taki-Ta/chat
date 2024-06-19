@@ -40,3 +40,19 @@ VALUES
         '$argon2id$v=19$m=19456,t=2,p=1$uNKV4wL5Q/UrcobBhB8YWA$MRB6RydruXJnRO7/VdPkpRr4KDmRr2FlgYpnpqKoLhQ',
         0
     );
+
+--insert 4 chats
+--named chats
+INSERT INTO
+    chats (ws_id, name, type, members)
+VALUES
+    (0, 'single_chat', 'single', '{1,2}'),
+    (0, 'group_chat', 'group', '{1,2,3,4,5}'),
+    (0, 'private_chat', 'private_channel', '{1,2,3,4,5}'),
+    (0, 'public_chat', 'public_channel', '{1,2,3,4,5}');
+    --unnamed chat
+INSERT INTO
+    chats (ws_id, type, members)
+VALUES
+    (0, 'single', '{1,2}'),
+    (0, 'group', '{1,2,3,4,5}');
