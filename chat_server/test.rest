@@ -66,3 +66,38 @@ Content-Type: application/json
 {
     "members": [1,2]
 }
+
+### upload file
+POST http://localhost:6688/api/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=myboundary
+Keep-Alive: timeout=5, max=1000
+
+--myboundary
+Content-Disposition: form-data; filename="aa.jpg"
+Content-Type: application/octet-stream
+Keep-Alive: timeout=5, max=1000
+
+< /Users/taki/Pictures/wallpaper/aa.jpg
+
+--myboundary
+Content-Disposition: form-data; filename="bb.jpg"
+Content-Type: image/jpeg
+Keep-Alive: timeout=5, max=1000
+
+< /Users/taki/Pictures/wallpaper/bb.jpg
+
+--myboundary
+Content-Disposition: form-data; filename="hello.txt"
+Content-Type: text/plain
+Keep-Alive: timeout=5, max=1000
+
+hello world
+
+--myboundary--
+
+
+
+### upload file
+GET http://localhost:6688/api/files/0/e6a/bae/bd5e0e6e37b75c7cacc3ca7496b8e9262b.png
+Authorization: Bearer {{token}}

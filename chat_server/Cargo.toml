@@ -23,7 +23,10 @@ tower = "0.4.13"
 tower-http = { version = "0.5.2", features = ["compression-full", "trace"] }
 uuid = { version = "1.8.0", features = ["v7", "serde"] }
 futures-util = "0.3.30"
-axum-extra = { version = "0.9.3", features = ["typed-header"] }
+axum-extra = { version = "0.9.3", features = ["typed-header", "multipart"] }
+sha1 = "0.10.6"
+hex = "0.4.3"
+mime_guess = "2.0.4"
 
 
 [dev-dependencies]

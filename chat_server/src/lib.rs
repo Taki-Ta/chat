@@ -69,6 +69,8 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
                 .post(send_message_handler),
         )
         .route("/chat/:id/messages", get(list_messages_handler))
+        .route("/upload", post(file_upload_handler))
+        .route("/files/:ws_id/*path", get(file_download_handler))
         .layer(from_fn_with_state(state.clone(), verify_token))
         //routes unneed to verify token
         .route("/signin", post(signin_handler))

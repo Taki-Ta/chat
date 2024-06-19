@@ -106,7 +106,7 @@ impl Chat {
     ) -> Result<Chat, AppError> {
         let chat = Chat::fetch_by_id(id, pool)
             .await?
-            .ok_or_else(|| AppError::ChatNotFountError("Chat not found".into()))?;
+            .ok_or_else(|| AppError::NotFountError("Chat not found".into()))?;
 
         if let Some(members) = &input.members {
             Self::validate_chat(members, &chat.name)?;
@@ -214,7 +214,7 @@ impl Chat {
             .await?;
 
         if res.rows_affected() == 0 {
-            return Err(AppError::ChatNotFountError("Chat not found".into()));
+            return Err(AppError::NotFountError("Chat not found".into()));
         }
 
         Ok(())

@@ -31,8 +31,12 @@ pub enum AppError {
     AlreadyExists(String),
     #[error("create chat error: {0}")]
     ChatValidateError(String),
-    #[error("chat error: {0}")]
-    ChatNotFountError(String),
+    #[error("not fount error: {0}")]
+    NotFountError(String),
+    #[error("io error: {0}")]
+    IOError(#[from] tokio::io::Error),
+    #[error("multipart error: {0}")]
+    MultipartError(#[from] axum_extra::extract::multipart::MultipartError),
 }
 
 impl IntoResponse for AppError {
@@ -43,7 +47,9 @@ impl IntoResponse for AppError {
             AppError::JwtSignError(_) => StatusCode::FORBIDDEN,
             AppError::AlreadyExists(_) => StatusCode::CONFLICT,
             AppError::ChatValidateError(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            AppError::ChatNotFountError(_) => StatusCode::NOT_FOUND,
+            AppError::NotFountError(_) => StatusCode::NOT_FOUND,
+            AppError::IOError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::MultipartError(_) => StatusCode::UNPROCESSABLE_ENTITY,
         };
         let body = (status_code, Json(OutputError::new(self.to_string())));
         body.into_response()
