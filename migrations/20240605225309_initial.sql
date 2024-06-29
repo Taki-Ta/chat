@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS chats(
 -- create message table
 CREATE TABLE IF NOT EXISTS messages(
   id bigserial PRIMARY KEY,
-  chat_id bigint NOT NULL REFERENCES chats(id),
-  sender_id bigint NOT NULL REFERENCES users(id),
+  chat_id bigint NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+  sender_id bigint NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   content text NOT NULL,
   files text[] DEFAULT '{}',
   created_at timestamptz DEFAULT CURRENT_TIMESTAMP

@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Extension, Json,
@@ -9,14 +9,26 @@ use std::vec;
 use tokio::fs;
 use tracing::{info, warn};
 
-use crate::{models::ChatFile, AppError, AppState, User};
+use crate::{models::ChatFile, AppError, AppState, CreateMessage, ListMessages, User};
 
-pub(crate) async fn list_messages_handler() -> impl IntoResponse {
-    "list_messages_handler"
+pub(crate) async fn list_message_handler(
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Query(input): Query<ListMessages>,
+) -> Result<impl IntoResponse, AppError> {
+    let messages = state.list_messages(input, id).await?;
+    Ok(Json(messages))
 }
 
-pub(crate) async fn send_message_handler() -> impl IntoResponse {
-    "send_message_handler"
+pub(crate) async fn send_message_handler(
+    Extension(user): Extension<User>,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Json(input): Json<CreateMessage>,
+) -> Result<impl IntoResponse, AppError> {
+    let msg = state.create_message(input, id, user.id as _).await?;
+
+    Ok(Json(msg))
 }
 
 ///handle file upload
@@ -25,7 +37,7 @@ pub async fn file_upload_handler(
     State(state): State<AppState>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
-    let ws_id = user.ws_id;
+    let ws_id = user.ws_id as u64;
     let path = state.config.server.base_url.join(ws_id.to_string());
     let mut files = vec![];
     while let Some(field) = multipart.next_field().await? {
@@ -38,7 +50,7 @@ pub async fn file_upload_handler(
                 continue;
             }
         };
-        let chat_file = ChatFile::new(&filename, &bytes);
+        let chat_file = ChatFile::new(ws_id, &filename, &bytes);
         let path = chat_file.path(&path);
         if !path.exists() {
             fs::create_dir_all(path.parent().expect("file path parent should exists")).await?;
@@ -46,7 +58,7 @@ pub async fn file_upload_handler(
         } else {
             warn!("file already exists");
         }
-        files.push(chat_file.url(ws_id));
+        files.push(chat_file.url());
     }
     Ok((StatusCode::OK, Json(files)))
 }

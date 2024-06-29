@@ -56,3 +56,17 @@ INSERT INTO
 VALUES
     (0, 'single', '{1,2}'),
     (0, 'group', '{1,2,3,4,5}');
+
+
+
+INSERT INTO messages(chat_id, sender_id, content)
+  VALUES (1, 1, 'Hello, world!'),
+(1, 2, 'Hi, there!'),
+(1, 3, 'How are you?'),
+(1, 4, 'I am fine, thank you!'),
+(1, 5, 'Good to hear that!'),
+(1, 1, 'Hello, world!'),
+(1, 2, 'Hi, there!'),
+(1, 3, 'How are you?'),
+(1, 1, 'Hello, world!'),
+(1, 1, 'Hello, world!');

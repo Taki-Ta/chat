@@ -45,7 +45,7 @@ pub async fn verify_token(State(state): State<AppState>, mut req: Request, next:
 
 #[cfg(test)]
 mod tests {
-    use crate::{AppConfig, User};
+    use crate::User;
 
     use super::*;
     use anyhow::Result;
@@ -59,8 +59,7 @@ mod tests {
 
     #[tokio::test]
     async fn verify_token_should_work() -> Result<()> {
-        let config = AppConfig::load()?;
-        let (_tdb, state) = AppState::new_for_test(config).await?;
+        let (_tdb, state) = AppState::new_for_test().await?;
         let user = User::new(1, "Taki", "Taki@gmail.com");
         let token = state.ek.encode(user)?;
         //create a router with the verify_token middleware

@@ -14,8 +14,8 @@ use axum::{
 pub use config::AppConfig;
 pub use errors::*;
 use handlers::*;
-use middlewares::{set_layer, verify_token};
-pub use models::User;
+use middlewares::{set_layer, verify_chat, verify_token};
+pub use models::*;
 use sqlx::PgPool;
 use std::{fmt, ops::Deref, sync::Arc};
 pub use utils::{DecodingKey, EncodingKey};
@@ -59,20 +59,23 @@ impl AppState {
 
 pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
     let state = AppState::try_new(config).await?;
-
-    let api = Router::new()
-        .route("/chats", get(list_chat_handler).post(create_chat_handler))
+    let chat = Router::new()
         .route(
-            "/chat/:id",
+            "/:id",
             patch(update_chat_handler)
                 .delete(delete_chat_handler)
                 .post(send_message_handler),
         )
-        .route("/chat/:id/messages", get(list_messages_handler))
+        .route("/:id/messages", get(list_message_handler))
+        .layer(from_fn_with_state(state.clone(), verify_chat))
+        .route("/", get(list_chat_handler).post(create_chat_handler));
+    let api = Router::new()
+        .route("/users", get(list_chat_handler))
+        .nest("/chats", chat)
         .route("/upload", post(file_upload_handler))
         .route("/files/:ws_id/*path", get(file_download_handler))
         .layer(from_fn_with_state(state.clone(), verify_token))
-        //routes unneed to verify token
+        // routes doesn't need token verification
         .route("/signin", post(signin_handler))
         .route("/signup", post(signup_handler));
 
@@ -101,9 +104,8 @@ mod tests {
     use sqlx_db_tester::TestPg;
 
     impl AppState {
-        pub async fn new_for_test(
-            config: AppConfig,
-        ) -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+        pub async fn new_for_test() -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+            let config = AppConfig::load()?;
             let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
             let ek = EncodingKey::load(&config.auth.sk).context("load sk failed")?;
             let post = config.server.db_url.rfind('/').unwrap();

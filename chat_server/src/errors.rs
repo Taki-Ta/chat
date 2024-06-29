@@ -37,6 +37,10 @@ pub enum AppError {
     IOError(#[from] tokio::io::Error),
     #[error("multipart error: {0}")]
     MultipartError(#[from] axum_extra::extract::multipart::MultipartError),
+    #[error("create message error: {0}")]
+    CreateMessageError(String),
+    #[error("{0}")]
+    ChatFileError(String),
 }
 
 impl IntoResponse for AppError {
@@ -50,6 +54,8 @@ impl IntoResponse for AppError {
             AppError::NotFountError(_) => StatusCode::NOT_FOUND,
             AppError::IOError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::MultipartError(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            AppError::CreateMessageError(_) => StatusCode::BAD_REQUEST,
+            AppError::ChatFileError(_) => StatusCode::BAD_REQUEST,
         };
         let body = (status_code, Json(OutputError::new(self.to_string())));
         body.into_response()
