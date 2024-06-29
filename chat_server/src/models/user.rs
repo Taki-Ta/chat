@@ -3,23 +3,9 @@ use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
 };
-use chrono::{DateTime, Utc};
+use chat_core::User;
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
 use tracing::warn;
-
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
-pub struct User {
-    pub id: i64,
-    // pub ws_id: String,
-    pub name: String,
-    #[sqlx(default)]
-    #[serde(skip)]
-    pub password_hash: Option<String>,
-    pub email: String,
-    pub created_at: DateTime<Utc>,
-    pub ws_id: i64,
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateUser {
@@ -110,19 +96,6 @@ impl AppState {
                 }
             }
             None => Ok(None),
-        }
-    }
-}
-
-impl User {
-    pub fn new(id: i64, name: impl Into<String>, email: impl Into<String>) -> Self {
-        User {
-            id,
-            name: name.into(),
-            email: email.into(),
-            password_hash: None,
-            created_at: chrono::Utc::now(),
-            ws_id: 0,
         }
     }
 }

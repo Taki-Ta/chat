@@ -9,7 +9,8 @@ use std::vec;
 use tokio::fs;
 use tracing::{info, warn};
 
-use crate::{models::ChatFile, AppError, AppState, CreateMessage, ListMessages, User};
+use crate::{models::ChatFile, AppError, AppState, CreateMessage, ListMessages};
+use chat_core::User;
 
 pub(crate) async fn list_message_handler(
     State(state): State<AppState>,

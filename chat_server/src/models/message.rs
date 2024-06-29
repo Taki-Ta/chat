@@ -1,18 +1,8 @@
 use std::str::FromStr;
 
 use crate::{AppError, AppState, ChatFile};
-use chrono::{DateTime, Utc};
+use chat_core::Message;
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
-pub struct Message {
-    pub id: i64,
-    pub chat_id: i64,
-    pub content: String,
-    pub files: Vec<String>,
-    pub created_at: DateTime<Utc>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateMessage {

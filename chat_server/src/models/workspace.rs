@@ -1,15 +1,5 @@
-use crate::{AppError, AppState, User};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
-
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
-pub struct Workspace {
-    pub id: i64,
-    pub name: String,
-    pub owner_id: i64,
-    pub created_at: DateTime<Utc>,
-}
+use crate::{AppError, AppState};
+use chat_core::{User, Workspace};
 
 impl AppState {
     ///create a new workspace
@@ -60,22 +50,19 @@ impl AppState {
                 .await?;
         Ok(rec)
     }
-}
 
-impl Workspace {
     ///change the owner of the workspace if the user is the owner
     #[allow(unused)]
-    pub async fn change_owner(
+    pub async fn change_workspace_owner(
         &self,
+        ws_id: i64,
         new_owner_id: i64,
-        pool: &sqlx::PgPool,
-    ) -> Result<Self, AppError> {
-        let ws=sqlx::query_as("UPDATE workspaces SET owner_id = $1 WHERE id = $2 and owner_id = $3 RETURNING id, name, owner_id, created_at")
-            .bind(new_owner_id)
-            .bind(self.id)
-            .bind(self.owner_id)
-            .fetch_one(pool)
-            .await?;
+    ) -> Result<Workspace, AppError> {
+        let ws=sqlx::query_as("UPDATE workspaces SET owner_id = $1 WHERE id = $2 RETURNING id, name, owner_id, created_at")
+                .bind(new_owner_id)
+                .bind(ws_id)
+                .fetch_one(&self.pool)
+                .await?;
         Ok(ws)
     }
 }
@@ -95,7 +82,7 @@ mod tests {
         let user = state.create_user(&input).await.unwrap();
         assert_eq!(ws.name, "test");
         assert_eq!(user.ws_id, ws.id);
-        let ws = ws.change_owner(user.id, &state.pool).await.unwrap();
+        let ws = state.change_workspace_owner(ws.id, user.id).await.unwrap();
         assert_eq!(ws.owner_id, user.id);
         Ok(())
     }

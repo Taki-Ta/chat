@@ -1,9 +1,10 @@
-use crate::{AppError, AppState, User};
+use crate::{AppError, AppState};
 use axum::{
     extract::{FromRequestParts, Path, Request, State},
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use chat_core::User;
 
 #[allow(unused)]
 pub async fn verify_chat(State(state): State<AppState>, req: Request, next: Next) -> Response {
@@ -31,7 +32,7 @@ pub async fn verify_chat(State(state): State<AppState>, req: Request, next: Next
 
 #[cfg(test)]
 mod tests {
-    use crate::middlewares::verify_token;
+    use chat_core::middlewares::verify_token;
 
     use super::*;
     use anyhow::Result;
@@ -54,7 +55,7 @@ mod tests {
         let app = Router::new()
             .route("/chat/:id/messages", get(handler))
             .layer(from_fn_with_state(state.clone(), verify_chat))
-            .layer(from_fn_with_state(state.clone(), verify_token))
+            .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
             .with_state(state);
 
         // user in chat
