@@ -4,15 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = {workspace=true}
-axum = {workspace=true}
-axum-extra = { version = "0.9.3", features = ["typed-header"] }
-futures = "0.3.30"
-serde = {workspace=true}
-serde_yaml = {workspace=true}
-sqlx = {workspace=true}
-thiserror = {workspace=true}
-tokio = {workspace=true}
+anyhow = { workspace = true }
+axum = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+jwt-simple = { workspace = true }
+tracing-subscriber = { workspace = true }
+chat_core = { workspace = true }
+dashmap = "6.0.1"
 tokio-stream = "0.1.15"
-tracing = {workspace=true}
-tracing-subscriber = {workspace=true}
+futures = "0.3.30"
+axum-extra = { version = "0.9.3", features = ["typed-header"] }

@@ -22,16 +22,16 @@ pub use models::*;
 use sqlx::PgPool;
 use std::{fmt, ops::Deref, sync::Arc};
 #[derive(Debug, Clone)]
-pub(crate) struct AppState {
-    pub(crate) inner: Arc<AppStateInner>,
+pub struct AppState {
+    pub inner: Arc<AppStateInner>,
 }
 
 #[allow(unused)]
-pub(crate) struct AppStateInner {
-    pub(crate) config: AppConfig,
-    pub(crate) dk: DecodingKey,
-    pub(crate) ek: EncodingKey,
-    pub(crate) pool: PgPool,
+pub struct AppStateInner {
+    pub config: AppConfig,
+    pub dk: DecodingKey,
+    pub ek: EncodingKey,
+    pub pool: PgPool,
 }
 
 impl Deref for AppState {
@@ -67,8 +67,7 @@ impl TokenVerifier for AppState {
     }
 }
 
-pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
-    let state = AppState::try_new(config).await?;
+pub async fn get_router(state: AppState) -> Result<Router, AppError> {
     let chat = Router::new()
         .route(
             "/:id",
@@ -105,12 +104,11 @@ impl fmt::Debug for AppStateInner {
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(feature = "test-util")]
+mod test_util {
     use std::path::Path;
 
     use super::*;
-    use chat_core::{DecodingKey, EncodingKey};
     use sqlx::{Executor, PgPool};
     use sqlx_db_tester::TestPg;
 

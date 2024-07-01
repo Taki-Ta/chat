@@ -18,18 +18,31 @@ FOR EACH ROW
 EXECUTE FUNCTION add_to_chat();
 
 -- add a function: if message changed, notify with message data
+-- if new message added, notify with message data
 CREATE OR REPLACE FUNCTION add_to_message()
-RETURNS TRIGGER AS $$
+  RETURNS TRIGGER
+  AS $$
+DECLARE
+  USERS bigint[];
 BEGIN
-    RAISE NOTICE 'add_to_message: %',NEW;
+  IF TG_OP = 'INSERT' THEN
+    RAISE NOTICE 'add_to_message: %', NEW;
+    -- select chat with chat_id in NEW
+    SELECT
+      members INTO USERS
+    FROM
+      chats
+    WHERE
+      id = NEW.chat_id;
     PERFORM
-        pg_notify('chat_message_created', row_to_json(NEW)::text);
-    RETURN NEW;
+      pg_notify('chat_message_created', json_build_object('message', NEW, 'members', USERS)::text);
+  END IF;
+  RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$
+LANGUAGE plpgsql;
 
--- create trigger for message table
 CREATE TRIGGER add_to_message_trigger
-AFTER INSERT ON messages
-FOR EACH ROW
-EXECUTE FUNCTION add_to_message();
+  AFTER INSERT ON messages
+  FOR EACH ROW
+  EXECUTE FUNCTION add_to_message();

@@ -29,7 +29,7 @@ pub(crate) async fn send_message_handler(
 ) -> Result<impl IntoResponse, AppError> {
     let msg = state.create_message(input, id, user.id as _).await?;
 
-    Ok(Json(msg))
+    Ok((StatusCode::CREATED, Json(msg)))
 }
 
 ///handle file upload
@@ -39,7 +39,7 @@ pub async fn file_upload_handler(
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let ws_id = user.ws_id as u64;
-    let path = state.config.server.base_url.join(ws_id.to_string());
+    let path = &state.config.server.base_url;
     let mut files = vec![];
     while let Some(field) = multipart.next_field().await? {
         let name = field.file_name().map(|name| name.to_string());
@@ -52,7 +52,7 @@ pub async fn file_upload_handler(
             }
         };
         let chat_file = ChatFile::new(ws_id, &filename, &bytes);
-        let path = chat_file.path(&path);
+        let path = chat_file.path(path);
         if !path.exists() {
             fs::create_dir_all(path.parent().expect("file path parent should exists")).await?;
             fs::write(&path, &bytes).await?;

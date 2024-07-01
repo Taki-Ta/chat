@@ -1,6 +1,6 @@
 use crate::middlewares::TokenVerifier;
 use axum::{
-    extract::{FromRequestParts, Request, State},
+    extract::{FromRequestParts, Query, Request, State},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
@@ -9,7 +9,13 @@ use axum_extra::{
     headers::{authorization::Bearer, Authorization},
     TypedHeader,
 };
+use serde::Deserialize;
 use tracing::warn;
+
+#[derive(Debug, Deserialize)]
+struct Params {
+    access_token: String,
+}
 
 pub async fn verify_token<T>(State(state): State<T>, mut req: Request, next: Next) -> Response
 where
@@ -17,31 +23,47 @@ where
 {
     //get token from the request headers and validate it
     let (mut parts, body) = req.into_parts();
-    let req =
+    let token =
         match TypedHeader::<Authorization<Bearer>>::from_request_parts(&mut parts, &state).await {
-            Ok(TypedHeader(Authorization(bearer))) => {
-                let token = bearer.token();
-                //verify the token
-                match state.verify(token) {
-                    Ok(user) => {
-                        //set the user in the request extensions
-                        req = Request::from_parts(parts, body);
-                        req.extensions_mut().insert(user);
-                        req
+            Ok(TypedHeader(Authorization(bearer))) => bearer.token().to_owned(),
+            Err(e) => {
+                if e.is_missing() {
+                    match Query::<Params>::from_request_parts(&mut parts, &state).await {
+                        Ok(Query(params)) => params.access_token,
+                        Err(e) => {
+                            let msg = format!("parse Authorization header failed: {}", e);
+                            warn!(msg);
+                            return (
+                                StatusCode::UNAUTHORIZED,
+                                "parse Authorization header failed",
+                            )
+                                .into_response();
+                        }
                     }
-                    Err(e) => {
-                        let msg = format!("verify token failed: {:?}", e);
-                        warn!(msg);
-                        return (StatusCode::FORBIDDEN, msg).into_response();
-                    }
+                } else {
+                    let msg = format!("parse Authorization header failed: {}", e);
+                    warn!(msg);
+                    return (
+                        StatusCode::UNAUTHORIZED,
+                        "parse Authorization header failed",
+                    )
+                        .into_response();
                 }
             }
-            Err(e) => {
-                let msg = format!("parse Authorization header failed: {}", e);
-                warn!(msg);
-                return (StatusCode::UNAUTHORIZED, msg).into_response();
-            }
         };
+    let req = match state.verify(&token) {
+        Ok(user) => {
+            //set the user in the request extensions
+            req = Request::from_parts(parts, body);
+            req.extensions_mut().insert(user);
+            req
+        }
+        Err(e) => {
+            let msg = format!("verify token failed: {:?}", e);
+            warn!(msg);
+            return (StatusCode::FORBIDDEN, msg).into_response();
+        }
+    };
     // Call the next middleware in the chain.
     next.run(req).await
 }
@@ -99,11 +121,22 @@ mod tests {
             .route("/", get(handler))
             .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
             .with_state(state);
-        //good token
+        //good header token
         //send a request with the token using oneshot
         let req = Request::builder()
             .uri("/")
             .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+        let res = app.clone().oneshot(req).await.unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = res.collect().await.unwrap().to_bytes();
+        assert_eq!(&body[..], b"ok");
+
+        //good query token
+        //send a request with the token using oneshot
+        let req = Request::builder()
+            .uri(format!("/?access_token={}", token))
             .body(Body::empty())
             .unwrap();
         let res = app.clone().oneshot(req).await.unwrap();
@@ -128,10 +161,8 @@ mod tests {
         let res = app.clone().oneshot(req).await.unwrap();
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
         let body = res.collect().await.unwrap().to_bytes();
-        assert_eq!(
-            &body[..],
-            b"parse Authorization header failed: Header of type `authorization` was missing"
-        );
+        println!("{}", String::from_utf8_lossy(&body));
+        assert_eq!(&body[..], b"parse Authorization header failed");
         Ok(())
     }
 }

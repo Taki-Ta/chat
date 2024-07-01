@@ -1,0 +1,14 @@
+server:
+  host: 0.0.0.0
+  port: 6688
+  db_url: postgres://postgres:postgres@localhost:5432/chat
+  base_url: /tmp/file_server
+auth:
+  sk: |
+    -----BEGIN PRIVATE KEY-----
+    MC4CAQAwBQYDK2VwBCIEII3QopleA5uIg6ipH5hzNA//Xmd2q4siWaFKMpHtlBFo
+    -----END PRIVATE KEY-----
+  pk: |
+    -----BEGIN PUBLIC KEY-----
+    MCowBQYDK2VwAyEAejM5971ewQADRftLZ2vDQVVtglgOyclPfuBMnz+yjFE=
+    -----END PUBLIC KEY-----
