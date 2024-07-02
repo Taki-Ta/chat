@@ -2,7 +2,8 @@ use crate::{AppError, AppState};
 use chat_core::{Chat, ChatType};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
+use utoipa::ToSchema;
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct CreateChat {
     pub name: Option<String>,
     pub public: bool,
@@ -16,7 +17,7 @@ pub struct UpdateChat {
     pub members: Option<Vec<i64>>,
 }
 
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct ChatUser {
     pub name: String,
     pub email: String,

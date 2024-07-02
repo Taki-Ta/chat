@@ -18,7 +18,7 @@ tokio = {workspace=true}
 futures-util = "0.3.30"
 jwt-simple = {workspace=true}
 uuid = { version = "1.8.0", features = ["v7", "serde"] }
-
+utoipa = { version = "4.2.0", features = ["axum_extras", "chrono"] }
 
 
 [dev-dependencies]
