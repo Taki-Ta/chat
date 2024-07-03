@@ -34,6 +34,10 @@ pub(crate) async fn list_chat_handler(
     responses(
         (status = 201, description = "Create chat", body = Chat),
     ),
+    params(
+        ("id" = u64, Path, description = "Chat id"),
+        CreateChat
+    ),
     security(
         ("token" = [])
     )
@@ -53,6 +57,10 @@ pub(crate) async fn create_chat_handler(
     responses(
         (status = 200, description = "Update chat", body = Chat),
         (status = 404, description = "Chat not found", body = OutputError),
+    ),
+    params(
+        ("id" = u64, Path, description = "Chat id"),
+        UpdateChat
     ),
     security(
         ("token" = [])
